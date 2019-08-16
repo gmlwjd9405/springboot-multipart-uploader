@@ -1,0 +1,10 @@
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 1GB
+      max-request-size: 1GB
+  thymeleaf:
+    enabled: true
+    suffix: .html
+    cache: false
