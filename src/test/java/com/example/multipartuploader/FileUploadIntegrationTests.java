@@ -1,5 +1,6 @@
 package com.example.multipartuploader;
 
+import com.example.multipartuploader.dto.VideoInfoDTO;
 import com.example.multipartuploader.storage.StorageService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,9 +11,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -39,7 +42,6 @@ public class FileUploadIntegrationTests {
     @Test
     public void shouldUploadFile() throws Exception {
         ClassPathResource resource = new ClassPathResource("SampleVideo_360x240_2mb.mp4", getClass());
-        System.out.println(resource.exists());
 
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("file", resource);
@@ -48,6 +50,27 @@ public class FileUploadIntegrationTests {
         assertThat(response.getStatusCode()).isEqualByComparingTo(HttpStatus.FOUND);
         assertThat(response.getHeaders().getLocation().toString())
                 .startsWith("http://localhost:" + this.port + "/");
+        then(storageService).should().store(any(MultipartFile.class));
+    }
+
+    @Test
+    public void shouldUploadMultipartData() throws Exception {
+        ClassPathResource resource = new ClassPathResource("SampleVideo_360x240_2mb.mp4", getClass());
+        VideoInfoDTO videoInfoDTO = new VideoInfoDTO("비디오 이름", "애니메이션");
+
+//        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+//        builder.part("file", resource);
+//        builder.part("videoInfo", videoInfoDTO);
+//        MultiValueMap<String, HttpEntity<?>> map = builder.build();
+
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("file", resource);
+        map.add("videoInfo", videoInfoDTO);
+        ResponseEntity<String> response = this.restTemplate.postForEntity("/multipartUpload", map, String.class);
+
+        assertThat(response.getStatusCode()).isEqualByComparingTo(HttpStatus.FOUND);
+//        assertThat(response.getHeaders().getLocation().toString())
+//                .startsWith("http://localhost:" + this.port + "/multipartUpload");
         then(storageService).should().store(any(MultipartFile.class));
     }
 
@@ -62,8 +85,6 @@ public class FileUploadIntegrationTests {
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
         assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
                 .isEqualTo("attachment; filename=\"SampleVideo_360x240_2mb.mp4\"");
-
-//        assertThat(response.getBody()).isEqualTo("Spring Framework");
     }
 
 }
